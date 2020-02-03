@@ -28,8 +28,10 @@ def add_files_to_frame(scrollable_frame,current_dir, row, column, button_action)
     global files
     files = os.listdir(current_dir)
 
+
     column= 0
-    row= 0
+    row= 1
+
 
     btn= []
     for i in range(len(files)):
@@ -37,6 +39,10 @@ def add_files_to_frame(scrollable_frame,current_dir, row, column, button_action)
             files.pop(files.index(".DS_Store"))
         if ".vscode" in files:
             files.pop(files.index(".vscode"))
+
+    backward_button = Button(scrollable_frame, text= "<", padx= 10, command= lambda: go_back(current_dir))
+    backward_button.grid(column= 0, row= 0)
+
 
     for i in range(len(files)):
         fullname = os.path.join(current_dir, files[i])
@@ -88,16 +94,16 @@ def add_files_to_frame(scrollable_frame,current_dir, row, column, button_action)
                 if column >= 4:
                     column= 0
                     row += 1
-        print(files[i])
-        print(files.index(files[i]))
 
 
 #changing directories
 def button_action(current_dir, name):
     global state
+    global old_dir
+    global new_dir_path
+
     state = "None"
     if state == "None":
-        print(name)
         new_dir_path= os.path.join(current_dir, name)
         os.chdir(new_dir_path)
         new_dir = os.getcwd()
@@ -107,6 +113,17 @@ def button_action(current_dir, name):
         create_tree_frame()
         add_files_to_tree("", new_dir)
 
+#going back
+def go_back(current_dir):
+    old_dir_split = current_dir.split("/")
+    old_dir_split.pop()
+    new_dir= "/".join(old_dir_split)
+    os.chdir(new_dir)
+    container.destroy()
+    tree_frame.destroy()
+    creating_frame(new_dir)
+    create_tree_frame()
+    add_files_to_tree("", new_dir)
 
 #creating frame
 def creating_frame(current_dir):
