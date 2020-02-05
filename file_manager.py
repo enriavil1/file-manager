@@ -23,8 +23,23 @@ folder_icon_for_display= folder_icon_png.subsample(5,5)
 file_icon_for_display= file_icon_png.subsample(5,5)
 python_icon_for_display= python_icon_png.subsample(5,5)
 
+#actions in the dropdown menu
+actions= [
+    "go in",
+    "move to",
+    "copy",
+    "paste",
+    ]
+
+global action
+action= StringVar()
+action.set(actions[0])
+ 
+#variable for file to move
+file_to_move= ""
+
 #adding files
-def add_files_to_frame(scrollable_frame,current_dir, row, column, button_action):
+def add_files_to_frame(scrollable_frame,current_dir,button_action):
     global files
     files = os.listdir(current_dir)
 
@@ -40,13 +55,29 @@ def add_files_to_frame(scrollable_frame,current_dir, row, column, button_action)
         if ".vscode" in files:
             files.pop(files.index(".vscode"))
 
+    #backward button
     backward_button = Button(scrollable_frame, text= "<", padx= 10, command= lambda: go_back(current_dir))
     backward_button.grid(column= 0, row= 0)
 
+    #menu to decide action
+    drop= OptionMenu(scrollable_frame, action, *actions)
+    drop.grid_propagate(0)
+    drop.grid(column= 1, row= 0, columnspan= 3, padx=80)
 
+    #here button to move file to that directory/folder
+    global here_button
+    here_button= Button(
+    scrollable_frame, 
+    text= "move file here",
+    state= DISABLED,
+    command= move_file
+    )
+
+    #adds files to frame 
     for i in range(len(files)):
         fullname = os.path.join(current_dir, files[i])
 
+        #checks if the file is a folder
         if os.path.isdir(fullname) == True:
             button= Button(
                 scrollable_frame,
@@ -63,6 +94,7 @@ def add_files_to_frame(scrollable_frame,current_dir, row, column, button_action)
             if column >= 5:
                 column= 0
                 row+= 1
+        #check if the file is not a folder
         else:
             if str(files[i]).endswith(".py"):
                 button= Button(
@@ -76,7 +108,7 @@ def add_files_to_frame(scrollable_frame,current_dir, row, column, button_action)
                 button.grid(column= column, row= row)
                 btn.append(button)
                 column+=1
-                if column >= 4:
+                if column >= 5:
                     column= 0
                     row += 1
             else:
@@ -91,7 +123,7 @@ def add_files_to_frame(scrollable_frame,current_dir, row, column, button_action)
                 btn.append(button)
                 button.grid(column= column, row= row)
                 column +=1 
-                if column >= 4:
+                if column >= 5:
                     column= 0
                     row += 1
 
@@ -101,24 +133,64 @@ def button_action(current_dir, name):
     global state
     global old_dir
     global new_dir_path
+    global file_to_move
 
-    state = "None"
-    if state == "None":
+    state = action.get()
+
+    if state == "go in":
+        #writes the new directory and changes the current working directory
         new_dir_path= os.path.join(current_dir, name)
         os.chdir(new_dir_path)
         new_dir = os.getcwd()
+
+        #destroys all the frames and packs them with new files
         container.destroy()
         tree_frame.destroy()
         creating_frame(new_dir)
         create_tree_frame()
         add_files_to_tree("", new_dir)
 
+        if file_to_move is not None:
+            #enabling here button
+            here_button.configure(state= NORMAL)
+            here_button.grid(row= 0, column= 4)
+
+    if state == "move to":
+        #file to move
+        file_to_move= os.path.join(current_dir, name)
+
+        #enabling here button
+        here_button.configure(state= NORMAL)
+        here_button.grid(row= 0, column= 4)
+
+#function to move a file to a new place
+def move_file():
+    print(file_to_move)
+
+    working_dir = os.getcwd()
+    print(working_dir)
+
+    if file_to_move is os.path:
+        error = Toplevel()
+        error.title("Same directory")
+        error.geometry("200x200")
+        error.propagate(0)
+        Label(error, text= "You are not moving the file anywhere", anchor= CENTER).pack(side= CENTER)
+
+
 #going back
 def go_back(current_dir):
+    #separates the current directory per word and takes the last directory off the path
     old_dir_split = current_dir.split("/")
     old_dir_split.pop()
+
+    #Joins the dir which is the same as the directory before the current one
     new_dir= "/".join(old_dir_split)
+
+    #changes the directory 
     os.chdir(new_dir)
+
+    #destroys the current frames and creates new frames with the files of the new directory
     container.destroy()
     tree_frame.destroy()
     creating_frame(new_dir)
@@ -130,8 +202,6 @@ def creating_frame(current_dir):
     global row
     global column
 
-    row = 0
-    column = 1 
     #Frame for files
     global container
     container=Frame(root,width=750,height=500,bd=1, bg= "white")
@@ -155,7 +225,7 @@ def creating_frame(current_dir):
         )
     )
 
-    add_files_to_frame(scrollable_frame, current_dir, row, column, button_action)
+    add_files_to_frame(scrollable_frame, current_dir, button_action)
 
 creating_frame(dir)
 
