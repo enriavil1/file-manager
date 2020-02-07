@@ -36,7 +36,7 @@ action= StringVar()
 action.set(actions[0])
  
 #variable for file to move
-file_to_move= ""
+file_to_move= None
 
 #adding files
 def add_files_to_frame(scrollable_frame,current_dir,button_action):
@@ -159,6 +159,8 @@ def button_action(current_dir, name):
         #file to move
         file_to_move= os.path.join(current_dir, name)
 
+        action.set(actions[0])
+
         #enabling here button
         here_button.configure(state= NORMAL)
         here_button.grid(row= 0, column= 4)
@@ -170,12 +172,42 @@ def move_file():
     working_dir = os.getcwd()
     print(working_dir)
 
-    if file_to_move is os.path:
+    if file_to_move == working_dir:
+        #creates a warning window
         error = Toplevel()
         error.title("Same directory")
         error.geometry("200x200")
         error.propagate(0)
-        Label(error, text= "You are not moving the file anywhere", anchor= CENTER).pack(side= CENTER)
+        error.resizable(0,0)
+
+        #a canvas to set a red color to the window
+        error_canvas = Frame(
+            error, 
+            width= 200, 
+            height= 200, 
+            bg= "red"
+            )
+        error_canvas.pack_propagate(0)
+        error_canvas.pack()
+
+        #warning sign
+        warning_sign= Label(
+            error_canvas,
+            text= "WARNING",
+            bg= "red"
+        )
+        warning_sign.pack()
+
+        #message with the problem
+        label_message= Label(
+            error_canvas, 
+            text= "You cant put a file\n inside of itself",
+            bg= "red"
+            )
+        label_message.pack()
+
+        
+
 
 
 #going back
@@ -196,6 +228,12 @@ def go_back(current_dir):
     creating_frame(new_dir)
     create_tree_frame()
     add_files_to_tree("", new_dir)
+
+    #Checks if there is a current file it can move
+    if file_to_move is not None:
+        #enabling here button
+        here_button.configure(state= NORMAL)
+        here_button.grid(row= 0, column= 4)
 
 #creating frame
 def creating_frame(current_dir):
