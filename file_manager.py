@@ -39,6 +39,9 @@ action.set(actions[0])
 #variable for file to move
 file_to_move= None
 
+file_to_copy= None
+
+
 #adding files
 def add_files_to_frame(scrollable_frame,current_dir,button_action):
     global files
@@ -80,7 +83,8 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
         scrollable_frame,
         text= "paste here",
         state= DISABLED,
-        command= paste
+        command=paste_file
+        
     )
 
     #adds files to frame 
@@ -146,6 +150,7 @@ def button_action(current_dir, name):
     global old_dir
     global new_dir_path
     global file_to_move
+    global file_to_copy
 
     state = action.get()
 
@@ -166,21 +171,55 @@ def button_action(current_dir, name):
             #enabling here button
             here_button.configure(state= NORMAL)
             here_button.grid(row= 0, column= 4)
+        
+        if file_to_copy is not None:
+            #enabling paste button
+            paste.configure(state= NORMAL)
+            paste.grid(row= 0, column= 4)
 
     if state == "pick file to move":
         #file to move
         file_to_move= os.path.join(current_dir, name)
 
+        #deleting the copy file so no overlap happens
+        file_to_copy= None
+
+        #going back to go in mode
         action.set(actions[0])
 
         #enabling here button
         here_button.configure(state= NORMAL)
         here_button.grid(row= 0, column= 4)
+
+        #deleting paste button
+        paste.grid_forget()
     
     if state == "copy":
+
         #copied file
-        file_to_copy= os.path(current_dir, name)
+        file_to_copy= os.path.join(current_dir, name)
+
+        #deleting moving file to avoid overlap
+        file_to_move= None
+
+        #going back to go in mode
+        action.set(actions[0])
+
+        #enabling paste button
+        paste.configure(state= NORMAL)
+        paste.grid(row=0, column= 4)
+
+        #deleting here button
+        here_button.grid_forget()
+    
+    if state == "delete":
+        #file to delete
+        file_to_delete= os.path.join(current_dir, name)
+
+        action.set(actions[0])
+        shutil.move(file_to_delete, "/Users/enriavil1/.Trash")
         
+        button_action(current_dir, "")
 
 
 
@@ -230,6 +269,8 @@ def move_file():
             shutil.move(file_to_move, os.getcwd())
 
             file_to_move = None
+
+            #updates the frame
             button_action(working_dir, "")
         except Exception:
             #creates a warning window
@@ -265,10 +306,19 @@ def move_file():
                 )
             label_message.pack()
 
+#pasting file
 
-        
+def paste_file():
+    global file_to_copy
 
+    #pastes the copied file into the current working dir
+    shutil.copy(file_to_copy, os.getcwd())
 
+    #deletes the old copied file
+    file_to_copy= None
+    
+    #updates the frame
+    button_action(os.getcwd(), "")
 
 #going back
 def go_back(current_dir):
@@ -294,6 +344,10 @@ def go_back(current_dir):
         #enabling here button
         here_button.configure(state= NORMAL)
         here_button.grid(row= 0, column= 4)
+    
+    if file_to_copy is not None:
+        paste.configure(state= NORMAL)
+        paste.grid(row=0, column= 4)
 
 #creating frame
 def creating_frame(current_dir):
