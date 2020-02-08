@@ -1,6 +1,7 @@
 from tkinter import *
 import tkinter.ttk as ttk
 import os
+import shutil
 
 
 dir = os.getcwd()
@@ -26,9 +27,9 @@ python_icon_for_display= python_icon_png.subsample(5,5)
 #actions in the dropdown menu
 actions= [
     "go in",
-    "move to",
+    "pick file to move",
     "copy",
-    "paste",
+    "delete"
     ]
 
 global action
@@ -73,6 +74,15 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
     command= move_file
     )
 
+    #paste button
+    global paste
+    paste= Button(
+        scrollable_frame,
+        text= "paste here",
+        state= DISABLED,
+        command= paste
+    )
+
     #adds files to frame 
     for i in range(len(files)):
         fullname = os.path.join(current_dir, files[i])
@@ -104,6 +114,7 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
                     padx= 10,
                     pady= 10,
                     compound = TOP,
+                    command= lambda c=i: button_action(current_dir, btn[c].cget("text"))
                 )
                 button.grid(column= column, row= row)
                 btn.append(button)
@@ -119,6 +130,7 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
                     padx= 10,
                     pady= 10,
                     compound = TOP,
+                    command= lambda c=i: button_action(current_dir, btn[c].cget("text"))
                 )
                 btn.append(button)
                 button.grid(column= column, row= row)
@@ -155,7 +167,7 @@ def button_action(current_dir, name):
             here_button.configure(state= NORMAL)
             here_button.grid(row= 0, column= 4)
 
-    if state == "move to":
+    if state == "pick file to move":
         #file to move
         file_to_move= os.path.join(current_dir, name)
 
@@ -164,19 +176,26 @@ def button_action(current_dir, name):
         #enabling here button
         here_button.configure(state= NORMAL)
         here_button.grid(row= 0, column= 4)
+    
+    if state == "copy":
+        #copied file
+        file_to_copy= os.path(current_dir, name)
+        
+
+
 
 #function to move a file to a new place
 def move_file():
+    global file_to_move
     print(file_to_move)
 
     working_dir = os.getcwd()
-    print(working_dir)
 
     if file_to_move == working_dir:
         #creates a warning window
         error = Toplevel()
         error.title("Same directory")
-        error.geometry("200x200")
+        error.geometry("150x150")
         error.propagate(0)
         error.resizable(0,0)
 
@@ -201,10 +220,51 @@ def move_file():
         #message with the problem
         label_message= Label(
             error_canvas, 
-            text= "You cant put a file\n inside of itself",
+            text= "You can\'t put the \nselected file here",
             bg= "red"
             )
         label_message.pack()
+    else:
+        try:
+            #move file into new dir
+            shutil.move(file_to_move, os.getcwd())
+
+            file_to_move = None
+            button_action(working_dir, "")
+        except Exception:
+            #creates a warning window
+            error = Toplevel()
+            error.title("Same directory")
+            error.geometry("150x150")
+            error.propagate(0)
+            error.resizable(0,0)
+
+            #a canvas to set a red color to the window
+            error_canvas = Frame(
+                error, 
+                width= 200, 
+                height= 200, 
+                bg= "red"
+                )
+            error_canvas.pack_propagate(0)
+            error_canvas.pack()
+
+            #warning sign
+            warning_sign= Label(
+                error_canvas,
+                text= "WARNING",
+                bg= "red"
+            )
+            warning_sign.pack()
+
+            #message with the problem
+            label_message= Label(
+                error_canvas, 
+                text= "You can\'t put the \nselected file here",
+                bg= "red"
+                )
+            label_message.pack()
+
 
         
 
