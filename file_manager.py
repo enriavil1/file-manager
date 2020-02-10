@@ -29,7 +29,8 @@ actions= [
     "go in",
     "pick file to move",
     "copy",
-    "delete"
+    "delete",
+    "rename"
     ]
 
 global action
@@ -60,10 +61,12 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
             files.pop(files.index(".vscode"))
 
     #backward button
+    global backward_button
     backward_button = Button(scrollable_frame, text= "<", padx= 10, command= lambda: go_back(current_dir))
     backward_button.grid(column= 0, row= 0)
 
     #menu to decide action
+    global drop
     drop= OptionMenu(scrollable_frame, action, *actions)
     drop.grid_propagate(0)
     drop.grid(column= 1, row= 0, columnspan= 3, padx=80)
@@ -100,6 +103,7 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
                 pady=10,
                 padx= 10,
                 compound = TOP,
+                wraplength= 120,
                 command= lambda c=i: button_action(current_dir, btn[c].cget("text"))
             )
             btn.append(button)
@@ -117,6 +121,7 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
                     image= python_icon_for_display,
                     padx= 10,
                     pady= 10,
+                    wraplength= 100,
                     compound = TOP,
                     command= lambda c=i: button_action(current_dir, btn[c].cget("text"))
                 )
@@ -133,6 +138,7 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
                     image= file_icon_for_display,
                     padx= 10,
                     pady= 10,
+                    wraplength= 120,
                     compound = TOP,
                     command= lambda c=i: button_action(current_dir, btn[c].cget("text"))
                 )
@@ -218,8 +224,11 @@ def button_action(current_dir, name):
 
         action.set(actions[0])
         shutil.move(file_to_delete, "/Users/enriavil1/.Trash")
-        
+
         button_action(current_dir, "")
+    
+    if state == "rename":
+        renaming(name)
 
 
 
@@ -307,7 +316,6 @@ def move_file():
             label_message.pack()
 
 #pasting file
-
 def paste_file():
     global file_to_copy
 
@@ -320,6 +328,40 @@ def paste_file():
     #updates the frame
     button_action(os.getcwd(), "")
 
+#renaming a file
+def renaming(name):
+
+    old_name= name
+
+    #ungriding all top buttons
+    drop.grid_forget()
+    backward_button.grid_forget()
+    here_button.grid_forget()
+    paste.grid_forget()
+
+    #adding entry box
+    entry= Entry(scrollable_frame)
+    entry.grid(row=0, column= 0, columnspan= 2)
+
+    #adding confirm and cancel buttons
+    confirm= Button(
+        scrollable_frame,
+        text= "confirm",
+        padx= 10
+    )
+    confirm.grid(row=0, column= 2)
+
+    cancel= Button(
+        scrollable_frame,
+        text= "cancel",
+        padx= 10,
+        command= canceling
+    )
+    cancel.grid(row=0, column= 3)
+
+
+def canceling():
+    pass
 #going back
 def go_back(current_dir):
     #separates the current directory per word and takes the last directory off the path
@@ -361,6 +403,7 @@ def creating_frame(current_dir):
     container.grid_propagate(0)
 
     #scrollable frame for file display
+    global scrollable_frame
     canvas=Canvas(container, width= 720, height= 500, bg= "white")
     scrollable_frame=Frame(canvas, bg= "white")
     myscrollbar=Scrollbar(container,orient="vertical",command=canvas.yview)
