@@ -2,6 +2,7 @@ from tkinter import *
 import tkinter.ttk as ttk
 import os
 import shutil
+import subprocess
 
 
 dir = os.getcwd()
@@ -30,7 +31,7 @@ actions= [
     "pick file to move",
     "copy",
     "delete",
-    "rename"
+    "rename",
     ]
 
 global action
@@ -54,6 +55,7 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
 
 
     btn= []
+
     for i in range(len(files)):
         if ".DS_Store" in files:
             files.pop(files.index(".DS_Store"))
@@ -89,6 +91,17 @@ def add_files_to_frame(scrollable_frame,current_dir,button_action):
         command=paste_file
         
     )
+
+    #add button
+    global plus
+    plus= Button(
+        scrollable_frame,
+        text= "+",
+        padx= 10,
+        command= adding
+    )
+    plus.grid(row=0, column= 4)
+
 
     #adds files to frame 
     for i in range(len(files)):
@@ -163,25 +176,35 @@ def button_action(current_dir, name):
     if state == "go in":
         #writes the new directory and changes the current working directory
         new_dir_path= os.path.join(current_dir, name)
-        os.chdir(new_dir_path)
-        new_dir = os.getcwd()
 
-        #destroys all the frames and packs them with new files
-        container.destroy()
-        tree_frame.destroy()
-        creating_frame(new_dir)
-        create_tree_frame()
-        add_files_to_tree("", new_dir)
+        if os.path.isdir(new_dir_path):
+            os.chdir(new_dir_path)
+            new_dir = os.getcwd()
+
+            #destroys all the frames and packs them with new files
+            container.destroy()
+            tree_frame.destroy()
+            creating_frame(new_dir)
+            create_tree_frame()
+            add_files_to_tree("", new_dir)
+        else:
+            if name.endswith(".txt"):
+                subprocess.call(("open", "/System/Applications/TextEdit.app", new_dir_path))
+            
+            else:
+                subprocess.call(("open", new_dir_path))
 
         if file_to_move is not None:
             #enabling here button
             here_button.configure(state= NORMAL)
             here_button.grid(row= 0, column= 4)
+            plus.grid_forget()
         
         if file_to_copy is not None:
             #enabling paste button
             paste.configure(state= NORMAL)
             paste.grid(row= 0, column= 4)
+            plus.grid_forget()
 
     if state == "pick file to move":
         #file to move
@@ -199,6 +222,7 @@ def button_action(current_dir, name):
 
         #deleting paste button
         paste.grid_forget()
+        plus.grid_forget()
     
     if state == "copy":
 
@@ -217,6 +241,7 @@ def button_action(current_dir, name):
 
         #deleting here button
         here_button.grid_forget()
+        plus.grid_forget()
     
     if state == "delete":
         #file to delete
@@ -281,6 +306,7 @@ def move_file():
 
             #updates the frame
             button_action(working_dir, "")
+
         except Exception:
             #creates a warning window
             error = Toplevel()
@@ -314,7 +340,6 @@ def move_file():
                 bg= "red"
                 )
             label_message.pack()
-
 #pasting file
 def paste_file():
     global file_to_copy
@@ -333,6 +358,8 @@ def renaming(name):
 
     old_name= name
 
+    root.title("Changing the name of the file: {}".format(name))
+
     #ungriding all top buttons
     drop.grid_forget()
     backward_button.grid_forget()
@@ -347,9 +374,17 @@ def renaming(name):
     confirm= Button(
         scrollable_frame,
         text= "confirm",
-        padx= 10
+        padx= 10,
+        command= lambda: rename(old_name,entry.get())
     )
+
+    root.bind(
+        "<Return>",
+        (lambda event: rename(old_name,entry.get()))
+        )
+
     confirm.grid(row=0, column= 2)
+
 
     cancel= Button(
         scrollable_frame,
@@ -359,9 +394,29 @@ def renaming(name):
     )
     cancel.grid(row=0, column= 3)
 
+def rename(old_name,new_name):
+    #changes the name of the file
+    os.rename(old_name, new_name)
+
+    #reloads the page
+    action.set(actions[0])
+    creating_frame(os.getcwd())
+    create_tree_frame()
+    add_files_to_tree("", os.getcwd())
+
+
 
 def canceling():
+    root.title("File manager")
+    action.set(actions[0])
+    creating_frame(os.getcwd())
+    create_tree_frame()
+    add_files_to_tree("", os.getcwd())
+
+#adding files
+def adding():
     pass
+
 #going back
 def go_back(current_dir):
     #separates the current directory per word and takes the last directory off the path
@@ -386,10 +441,13 @@ def go_back(current_dir):
         #enabling here button
         here_button.configure(state= NORMAL)
         here_button.grid(row= 0, column= 4)
+        plus.grid_forget()
     
     if file_to_copy is not None:
         paste.configure(state= NORMAL)
         paste.grid(row=0, column= 4)
+        plus.grid_forget()
+
 
 #creating frame
 def creating_frame(current_dir):
